@@ -1,13 +1,13 @@
 $(document).ready(function() {
-    $('#send-btn').on('click', sendBets);
+    $('#send-btn').on('click', sendAngle);
 });
 $(document).keypress(function(e) {
     if(e.which == 13 || e.keyCode == 13) {
-        sendBets();
+        sendAngle();
     }
 });
 
-function sendBets() {
+function sendAngle() {
     var degrees = $('#degrees').val();
     var send = {
         payload: degrees
