@@ -1,24 +1,27 @@
 $(document).ready(function() {
-    $('#send-btn').on('click', sendAngle);
+    $('#left-btn').on('click',{dir: "left"}, sendAngle);
+    $('#right-btn').on('click',{dir: "right"}, sendAngle);
+    $('#up-btn').on('click',{dir: "up"}, sendAngle);
+    $('#down-btn').on('click',{dir: "down"}, sendAngle);
 });
-$(document).keypress(function(e) {
-    if(e.which == 13 || e.keyCode == 13) {
-        sendAngle();
-    }
-});
-
-function sendAngle() {
-    var degrees = $('#degrees').val();
+// $(document).keypress(function(e) {
+//     if(e.which == 13 || e.keyCode == 13) {
+//         sendAngle();
+//     }
+// });
+function sendAngle(event) {
+    var direction = event.data.dir
     var send = {
-        payload: degrees
+        payload: direction
     };
-
+    console.log(send);
     $.ajax({
         type:'POST',
         data:JSON.stringify(send),
-        url:'/degrees',
+        url:'/horizontal',
         dataType:'JSON'
     }).done(function(response) {
         console.log(response);
+        $('#current-pos').text(response.data);
     });
 }
