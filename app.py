@@ -1,17 +1,14 @@
 from flask import Flask, render_template, request, url_for, jsonify, Response
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from time import sleep
 import sys
-# import picamera
+from camera_pi import Camera
 
-# GPIO.setmode(GPIO.BOARD)
-# GPIO.setup(3, GPIO.OUT)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(3, GPIO.OUT)
 
-# pwm = GPIO.PWM(3, 50)
-# pwm.start(0)
-
-# cam = picamera.PiCamera()
-# cam.resolution = (640, 480)
+pwm = GPIO.PWM(3, 50)
+pwm.start(0)
 
 currentAngle = 0
 app = Flask(__name__)
@@ -26,24 +23,24 @@ def SetAngle(delta):
     else:
         currentAngle = angle
     duty = currentAngle / 18 + 2
-    print(duty)
-#     GPIO.output(3, True)
-#     pwm.ChangeDutyCycle(duty)
-#     sleep(1)
-#     GPIO.output(3,False)
-#     pwm.ChangeDutyCycle(0)
+    GPIO.output(3, True)
+    pwm.ChangeDutyCycle(duty)
+    sleep(1)
+    GPIO.output(3,False)
+    pwm.ChangeDutyCycle(0)
 
-def gen():
+def gen(camera):
     while True:
-        # cam.capture('image.jpg')
+        frame = camera.get_frame()
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + open('image.jpg','rb').read() + b'\r\n')
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 @app.route('/', methods=['GET'])
 def home():
     return render_template('index.html')
 
 @app.route('/horizontal', methods=['POST'])
 def move_dir():
+    global currentAngle
     direction = request.get_json(force=True)
     print(direction)
     if direction['payload'] == 'left':
@@ -53,20 +50,17 @@ def move_dir():
     else:
         pass
     
-    # SetAngle(angle)
-    global currentAngle
     return jsonify(data=currentAngle)
 
 @app.route('/video_feed')
 def video_feed():
-   return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+   return Response(gen(Camera()), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
     try:
-        # SetAngle(0)
+        SetAngle(90) # set to middle
         app.run(host='0.0.0.0',port=8080, threaded=True)
-    except (KeyboardInterrupt, SystemExit):
-        print("Goodbye")
-        # pwm.stop()
-        # GPIO.cleanup()
+    finally:
+        pwm.stop()
+        GPIO.cleanup()
         sys.exit()
