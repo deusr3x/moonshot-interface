@@ -12,19 +12,21 @@ pca = PCA9685(i2c)
 pca.frequency = 50
 
 servo0 = servo.Servo(pca.channels[0], min_pulse=600, max_pulse=2400)
+servo1 = servo.Servo(pca.channels[1], min_pulse=600, max_pulse=2400)
 
-currentAngle = 0
+currentAngleH = 0
+currentAngleV = 0
+
 app = Flask(__name__)
 
-def SetAngle(delta):
-    global currentAngle
+def SetAngle(delta, servo_n, currentAngle):
     angle = currentAngle + delta
     if angle <= 0:
         angle = 0
     elif angle >= 180:
         angle = 180
-    servo0.angle = angle
-    currentAngle = angle
+    servo_n.angle = angle
+    return angle
 
 def gen(camera):
     while True:
@@ -37,19 +39,24 @@ def home():
 
 @app.route('/horizontal', methods=['POST'])
 def move_dir():
-    global currentAngle
+    global currentAngleH
+    global currentAngleV
     direction = request.get_json(force=True)
     print(direction)
     if direction['payload'] == 'left':
-        SetAngle(-15)
+        currentAngleH = SetAngle(-15, servo0, currentAngleH)
         #SetAngle(0)
     elif direction['payload'] == 'right':
-        SetAngle(15)
+        currentAngleH = SetAngle(15, servo0, currentAngleH)
         #SetAngle(180)
+    elif direction['payload'] == 'up':
+        currentAngleV = SetAngle(-15, servo1, currentAngleV)
+    elif direction['payload'] == 'down':
+        currentAngleV = SetAngle(15, servo1, currentAngleV)
     else:
         pass
 
-    return jsonify(data=currentAngle)
+    return jsonify(data={'horz': currentAngleH, 'vert': currentAngleV})
 
 @app.route('/video_feed')
 def video_feed():
@@ -57,7 +64,7 @@ def video_feed():
 
 if __name__ == '__main__':
     try:
-        SetAngle(0) # set to middle
+        # SetAngleH(0, currentAngleH) # set to middle
         app.run(host='0.0.0.0',port=8080, threaded=True)
     finally:
         #pwm.stop()

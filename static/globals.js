@@ -21,7 +21,7 @@ function sendAngle(event) {
         url:'/horizontal',
         dataType:'JSON'
     }).done(function(response) {
-        console.log(response);
-        $('#current-pos').text(response.data);
+        console.log(response.data.data.horz);
+        $('#current-pos').text(response.data.data.horz);
     });
 }
